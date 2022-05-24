@@ -1,7 +1,7 @@
 {
   "name": "socket.io-static",
   "version": "0.1.0",
-  "description": "For serving files from within a given remote directory by using socket.io",
+  "description": "Serve remote files",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,6 +9,7 @@
   "keywords": [
     "socket.io",
     "stream",
+    "file",
     "remote",
     "static"
   ],
