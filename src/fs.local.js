@@ -47,10 +47,17 @@ const { isup } = require('./util/path')
 */
 
 class FSLocal {
-  /** @param {string} root */
-  constructor(root) {
+  /**
+   * @template T
+   * @param {string} root
+   * @param {Extract<T, { emit: (...args: any) => any; hasListeners: (event: string) => boolean; }>} [emitter]
+   */
+  constructor(root, emitter) {
     /** @readonly */
     this.root = normalize(root);
+    /** @type {'local'} */
+    this.type = 'local'
+    this.emitter = emitter
 
     this.stat = this.stat.bind(this)
     this.readdir = this.readdir.bind(this)
@@ -142,7 +149,21 @@ class FSLocal {
   }
 
   /**
-   * @private
+   * @param {string} event 
+   * @param  {...any} args 
+   */
+  emit(event, ...args) {
+    if (!this.emitter) {
+      throw new Error('emitter not found')
+    }
+    if (this.emitter.hasListeners(event)) {
+      this.emitter.emit(event, ...args)
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * @param {string} path
    */
   path(path) {

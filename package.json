@@ -13,6 +13,10 @@
     "remote",
     "static"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mutagen-d/socket.io-static.git"
+  },
   "author": "mutagen-d",
   "license": "ISC",
   "dependencies": {

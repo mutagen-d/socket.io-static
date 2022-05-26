@@ -7,6 +7,7 @@ const EVENTS = {
   DEL: '$fs.del',
   STRUCT: '$fs.struct',
   MKDIR: '$fs.mkdir',
+  ACTION: '$action',
 }
 
 module.exports = EVENTS;

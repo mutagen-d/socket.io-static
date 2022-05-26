@@ -30,10 +30,14 @@ class FSRemote {
    * @param {number} [timeout]
    */
   constructor(root, socket, timeout = 10 * 1000) {
-    this.root = normalize(root)
-    if (isup(this.root)) {
+    root = normalize(root)
+    if (isup(root)) {
       throw new Error('invalid path')
     }
+    this.root = root
+    /** @type {'remote'} */
+    this.type = 'remote'
+    /** @type {import('socket.io').Socket} */
     this.socket = socket
     this.timeout = timeout
   }
@@ -87,8 +91,12 @@ class FSRemote {
     return this.send(EVENTS.MKDIR, args)
   }
 
-  /** @type {import('fs').createWriteStream} */
-  createWriteStream(path, opts) {
+  /**
+   * @param {Parameters<typeof import('fs').createWriteStream>} args
+   * @returns {ReturnType<typeof import('fs').createWriteStream>}
+   */
+  createWriteStream(...args) {
+    var [path, opts] = args;
     path = this.path(path)
     /** @type {import('stream').Duplex} */
     const stream = ss.createStream()
@@ -97,8 +105,12 @@ class FSRemote {
     return stream;
   }
 
-  /** @type {import('fs').createReadStream} */
-  createReadStream(path, opts) {
+  /**
+   * @param {Parameters<typeof import('fs').createReadStream>} args
+   * @returns {ReturnType<typeof import('fs').createReadStream>}
+   */
+  createReadStream(...args) {
+    var [path, opts] = args;
     path = this.path(path)
     /** @type {import('stream').Duplex} */
     const stream = ss.createStream()
@@ -108,7 +120,14 @@ class FSRemote {
   }
 
   /**
-   * @private
+   * @param {string} event
+   * @param {...any} args
+   */
+  async emit(event, ...args) {
+    return this.socket.emit(event, args)
+  }
+
+  /**
    * @param {string} path
    */
   path(path) {
