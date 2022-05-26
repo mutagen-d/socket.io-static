@@ -58,7 +58,7 @@ app.use('/client/files', ss.remote.fs('/', () => socket))
 - `getSocket` - function returning socket object `() => import('socket.io').Socket`
 - returns express.js `middleware`
 
-Create file
+create file
 
 ```html
 <!-- Upload files -->
@@ -69,19 +69,19 @@ Create file
 </form>
 ```
 
-Delete file or directory
+delete file or directory
 
 ```sh
 curl -X DELETE localhost:3000/client/files/image.png
 curl -X DELETE localhost:3000/client/files/subfoler/
 ```
 
-Create directory
+create directory
 ```sh
 curl -X POST -H 'Content-Type: application/json' -d '{ "dir_name": "/foo/bar" }' localhost:3000/client/files/
 ```
 
-Upload file by url
+upload file by url
 ```sh
 curl -X POST -H 'Content-Type: application/json' -d '{ "file_url": "https://example.com/file.png", "file_name": "image.png" }' localhost:3000/client/files/
 ```
@@ -110,12 +110,39 @@ e.i.
 curl localhost:3000/client/files/subfolder
 ```
 
-### new FSRemote(root, socket)
+### ss.remote.action(root, getSocket, actions)
+
+handle arbitrary `actions`
+
+- `root` - subfolder path of remote folder
+- `getSocket` - function returning socket object `() => import('socket.io').Socket`
+- `actions` - allowed action list
+- returns express.js `middleware`
+
+```js
+// server.js
+app.use('/client/files', ss.remote.action(root, () => socket, ['do_smth']))
+```
+```js
+// client.js
+socket.on(ss.EVENTS.ACTION, (action, path, ...args) => {
+  if (action === 'do_smth') {
+    // do something
+  }
+})
+```
+usage
+```sh
+curl -X POST -H 'Content-Type: application/json' -d '{ "action": "do_smth", args: [] }' localhost:3000/client/files/image.png
+```
+
+### new FSRemote(root, socket [, timeout])
 
 create remote file system object
 
 - `root` - subfolder path of remote folder
 - `socket` - socket.io `Socket` instance
+- `timeout` - acknowledgement timeout (default, 10 sec)
 
 | Method                             | Return value              | Description               |
 | ---------------------------------- | ------------------------- | ------------------------- |
@@ -129,11 +156,12 @@ create remote file system object
 | `createWriteStream(path [, opts])` | `Promise<WriteStream>`    |                           |
 | `createReadStream(path [, opts])`  | `Promise<ReadStream>`     |                           |
 
-### new FSLocal(root)
+### new FSLocal(root [, emitter])
 
 create local file system object
 
 - `root` - root folder
+- `emitter` - event emitter which implements `{ emit: (...args) => any; hasListeners: (event) => boolean }` interface
 
 methods are same as for `FSRemote` object
 
