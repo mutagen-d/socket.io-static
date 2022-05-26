@@ -76,6 +76,16 @@ curl -X DELETE localhost:3000/client/files/image.png
 curl -X DELETE localhost:3000/client/files/subfoler/
 ```
 
+Create directory
+```sh
+curl -X POST -H 'Content-Type: application/json' -d '{ "dir_name": "/foo/bar" }' localhost:3000/client/files/
+```
+
+Upload file by url
+```sh
+curl -X POST -H 'Content-Type: application/json' -d '{ "file_url": "https://example.com/file.png", "file_name": "image.png" }' localhost:3000/client/files/
+```
+
 ### ss.remote.dir(root, getSocket)
 
 get remote directory entities
