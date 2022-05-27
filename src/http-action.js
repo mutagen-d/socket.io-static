@@ -117,7 +117,7 @@ function httpAction(getFS, actions) {
         fs.socket.emit(EVENTS.ACTION, action, fs.path(req.url), ...args)
         return res.send('OK')
       }
-      if (fs.emitter && fs.emitter.hasListeners(action)) {
+      if (fs.emitter && fs.emitter.hasListeners(EVENTS.ACTION)) {
         fs.emitter.emit(EVENTS.ACTION, action, fs.path(req.url), ...args)
         return res.send('OK')
       }
