@@ -34,16 +34,17 @@ io.use(ss.io.static(root))
 - `permissions` - access permissions: defaults `{ write: true, read: true, delete: false }`
 - returns socket.io `middleware`
 
-### ss.remote.static(root, getSocket)
+### ss.remote.static(root, getSocket [, options])
 
 serving remote folder's files
 
 ```js
-app.use('/client/files', ss.remote.static('/', () => socket))
+app.use('/client/files', ss.remote.static('/', () => socket, { index: ['index.html', 'index.htm'] }))
 ```
 
 - `root` - subfolder path of remote folder
 - `getSocket` - function returning socket object `() => import('socket.io').Socket`
+- `options` - contains index files `{ index?: boolean | string | string[] }`
 - returns express.js `middleware`
 
 ### ss.remote.fs(root, getSocket)
