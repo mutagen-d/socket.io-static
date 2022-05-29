@@ -2,6 +2,7 @@ const debug = require('debug')('socket.io-static:action')
 const { normalize } = require('path')
 const FSLocal = require('./fs.local')
 const FSRemote = require('./fs.remote')
+const { parseUrl } = require('./util/parseurl')
 const { isup } = require('./util/path')
 
 /**
@@ -113,9 +114,10 @@ function httpAction(getFS, actions) {
         debug('Warning! invalid action "%s"', action)
         return next()
       }
-      debug('Action "%s" on %s path "%s"', action, fs.type, req.url)
+      const { pathname } = parseUrl(req.url)
+      debug('Action "%s" on %s path "%s"', action, fs.type, pathname)
       if (fs.emitter) {
-        fs.action(action, req.url, ...args)
+        fs.action(action, pathname, ...args)
         return res.send('OK')
       } else {
         debug('Warning! action emitter not set, skipping')
@@ -130,7 +132,8 @@ function httpAction(getFS, actions) {
    */
   async function onRequest(req, res, next) {
     try {
-      if (isup(req.url)) {
+      const { pathname } = parseUrl(req.url)
+      if (isup(pathname)) {
         return next()
       }
       const fs = getFS()
@@ -140,7 +143,7 @@ function httpAction(getFS, actions) {
       if (req.method !== 'POST') {
         return next()
       }
-      const exists = await fs.exists(req.url)
+      const exists = await fs.exists(pathname)
       if (!exists) {
         return next()
       }

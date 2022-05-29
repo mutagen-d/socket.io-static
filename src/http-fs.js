@@ -6,6 +6,7 @@ const FSLocal = require('./fs.local')
 const FSRemote = require('./fs.remote')
 const { isup } = require('./util/path')
 const devNull = require('./util/devNull')
+const { parseUrl } = require('./util/parseurl')
 
 /**
  * @param {string} root
@@ -59,7 +60,8 @@ function httpFS(getFS) {
       const url = new URL(file.url)
       const filename = file.name || (url.pathname && url.pathname !== '/') ? basename(file.name || url.pathname) : undefined
       if (filename) {
-        const filepath = join(req.url, filename)
+        const { pathname } = parseUrl(req.url)
+        const filepath = join(pathname, filename)
         const stream = fs.createWriteStream(filepath)
         debug('uploading file "%s" to remote path "%s" from url "%s"', filename, filepath, url.href)
         return got.stream(file.url).pipe(stream)
@@ -76,7 +78,8 @@ function httpFS(getFS) {
    */
   const createDirectory = async (req, fs, dir) => {
     if (dir.name && !isup(dir.name)) {
-      const dirpath = join(req.url, normalize(dir.name))
+      const { pathname } = parseUrl(req.url)
+      const dirpath = join(pathname, normalize(dir.name))
       debug('creating remote directory "%s"', dirpath)
       await fs.mkdir(dirpath, { recursive: true })
     }
@@ -87,10 +90,11 @@ function httpFS(getFS) {
    * @param {FSLocal | FSRemote} fs 
    */
   const onFormData = async (req, res, fs) => {
-    if (!await fs.exists(req.url)) {
-      await fs.mkdir(req.url, { recursive: true })
+    const { pathname } = parseUrl(req.url)
+    if (!await fs.exists(pathname)) {
+      await fs.mkdir(pathname, { recursive: true })
     }
-    const stat = await fs.stat(req.url)
+    const stat = await fs.stat(pathname)
     const call = (target, fn) => typeof fn === 'function' ? fn.call(target) : fn;
     if (!call(stat, stat.isDirectory)) {
       return res.status(403).send('NOT ALLOWED');
@@ -102,7 +106,7 @@ function httpFS(getFS) {
         if (!filename) {
           return file.pipe(devNull, { end: false })
         }
-        const filepath = join(req.url, filename)
+        const filepath = join(pathname, filename)
         const stream = fs.createWriteStream(filepath)
         file.pipe(stream)
         debug('uploading file "%s" to remote path "%s"', filename, filepath)
@@ -168,7 +172,8 @@ function httpFS(getFS) {
    */
   async function onRequest(req, res, next) {
     try {
-      if (isup(req.url)) {
+      const { pathname } = parseUrl(req.url)
+      if (isup(pathname)) {
         return next()
       }
       const fs = getFS()
@@ -179,11 +184,11 @@ function httpFS(getFS) {
       const contentType = req.headers['content-type'] || ''
       switch (req.method) {
         case 'DELETE':
-          if (!await fs.exists(req.url)) {
+          if (!await fs.exists(pathname)) {
             return next()
           }
-          debug('deleting file "%s"', req.url)
-          await fs.del(req.url)
+          debug('deleting file "%s"', pathname)
+          await fs.del(pathname)
           return res.send('OK');
         case 'POST':
           if (/multipart\/form\-data/i.test(contentType)) {
