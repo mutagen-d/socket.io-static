@@ -1,7 +1,7 @@
-const { join, normalize } = require('path')
+const debug = require('debug')('socket.io-static:dir')
+const { join } = require('path')
 const FSLocal = require('./fs.local')
 const FSRemote = require('./fs.remote')
-const { time } = require('./util/time')
 
 /**
  * @typedef {{
@@ -44,15 +44,15 @@ function httpDir(getFS) {
       if (req.method !== 'GET') {
         return next()
       }
-      const current = getFS()
-      if (!current || !current.isConnected()) {
+      const fs = getFS()
+      if (!fs || !fs.isConnected()) {
         return next()
       }
-      const exists = await current.exists(req.url)
+      const exists = await fs.exists(req.url)
       if (!exists) {
         return next()
       }
-      const stat = await current.stat(req.url)
+      const stat = await fs.stat(req.url)
       const call = (target, fn) => {
         if (typeof fn === 'function') {
           return fn.call(target)
@@ -66,8 +66,9 @@ function httpDir(getFS) {
       if (!/\/$/.test(req.originalUrl)) {
         return res.redirect(req.originalUrl + '/')
       }
-      const filenames = await current.readdir(req.url, { withFileTypes: false })
-      const stats = await Promise.all(filenames.map(name => current.stat(join(req.url, name))))
+      debug('reading dir "%s"', req.url)
+      const filenames = await fs.readdir(req.url, { withFileTypes: false })
+      const stats = await Promise.all(filenames.map(name => fs.stat(join(req.url, name))))
       const files = stats.map((stat, index) => ({
         name: filenames[index],
         url: `${req.originalUrl}/${filenames[index]}`.replace(/\/\//g, '/'),
@@ -82,7 +83,7 @@ function httpDir(getFS) {
       req.entities = files;
       next()
     } catch (e) {
-      console.log(time(), 'error', e)
+      debug('error', e)
       next()
     }
   }

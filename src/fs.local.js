@@ -2,6 +2,7 @@ const fs = require('fs')
 const { join, normalize } = require('path')
 const del = require('del')
 const { isup } = require('./util/path')
+const EVENTS = require('./util/events')
 
 /**
  * @typedef {import('fs').ObjectEncodingOptions} ObjectEncodingOptions
@@ -58,14 +59,6 @@ class FSLocal {
     /** @type {'local'} */
     this.type = 'local'
     this.emitter = emitter
-
-    this.stat = this.stat.bind(this)
-    this.readdir = this.readdir.bind(this)
-    this.del = this.del.bind(this)
-    this.exists = this.exists.bind(this)
-    this.struct = this.struct.bind(this)
-    this.mkdir = this.mkdir.bind(this)
-    this.isConnected = this.isConnected.bind(this)
   }
 
   isConnected() {
@@ -149,18 +142,17 @@ class FSLocal {
   }
 
   /**
-   * @param {string} event 
-   * @param  {...any} args 
+   * @param {string} action
+   * @param {string} path
+   * @param {any[]} args
+   * @returns {boolean} whether or not action sent
    */
-  emit(event, ...args) {
-    if (!this.emitter) {
-      throw new Error('emitter not found')
+  action(action, path, ...args) {
+    if (this.emitter) {
+      path = this.path(path)
+      this.emitter.emit(EVENTS.ACTION, action, path, ...args)
     }
-    if (this.emitter.hasListeners(event)) {
-      this.emitter.emit(event, ...args)
-      return true;
-    }
-    return false;
+    return !!this.emitter;
   }
 
   /**

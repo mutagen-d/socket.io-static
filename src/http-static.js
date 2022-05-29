@@ -1,7 +1,7 @@
+const debug = require('debug')('socket.io-static:static')
 const { normalize } = require('path')
 const parseRange = require('range-parser')
 const mime = require('mime')
-const { time } = require('./util/time');
 const { isup } = require('./util/path');
 const FSRemote = require('./fs.remote');
 
@@ -84,12 +84,13 @@ function httpStatic(root, getSocket) {
           const opts = setHeaders(req, res, stat)
           const stream = remote.createReadStream(req.url, opts)
           stream.pipe(res)
+          debug('reading file from remote path "%s"', req.url)
           return
         default:
           return next()
       }
     } catch (e) {
-      console.log(time(), 'error', e)
+      debug('error', e)
       return next()
     }
   }

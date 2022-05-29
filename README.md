@@ -133,7 +133,7 @@ socket.on(ss.EVENTS.ACTION, (action, path, ...args) => {
 ```
 usage
 ```sh
-curl -X POST -H 'Content-Type: application/json' -d '{ "action": "do_smth", args: [] }' localhost:3000/client/files/image.png
+curl -X POST -H 'Content-Type: application/json' -d '{ "action": "do_smth", "args": [] }' localhost:3000/client/files/image.png
 ```
 
 ### new FSRemote(root, socket [, timeout])
@@ -153,6 +153,7 @@ create remote file system object
 | `del(path [, opts])`               | `Promise<string[]>`       | delete entity             |
 | `mkdir(path [, opts])`             | `Promise<string>`         | create directory          |
 | `struct(path)`                     | `Promise<StructResult>`   | get full structure of dir |
+| `action(action, path, ...args)`    | `boolean`                 | send action               |
 | `createWriteStream(path [, opts])` | `Promise<WriteStream>`    |                           |
 | `createReadStream(path [, opts])`  | `Promise<ReadStream>`     |                           |
 

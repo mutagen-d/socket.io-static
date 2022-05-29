@@ -21,6 +21,7 @@
   "license": "ISC",
   "dependencies": {
     "busboy": "^1.6.0",
+    "debug": "^4.3.4",
     "del": "^6",
     "got": "^11",
     "mime": "1.6.0",

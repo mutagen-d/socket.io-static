@@ -1,9 +1,8 @@
+const debug = require('debug')('socket.io-static:action')
 const { normalize } = require('path')
-const { time } = require('./util/time')
 const FSLocal = require('./fs.local')
 const FSRemote = require('./fs.remote')
 const { isup } = require('./util/path')
-const EVENTS = require('./util/events')
 
 /**
  * @template T
@@ -111,15 +110,15 @@ function httpAction(getFS, actions) {
     if (req.body && req.body.action) {
       const { action, args = [] } = req.body
       if (!actions.includes(action)) {
+        debug('Warning! invalid action "%s"', action)
         return next()
       }
-      if (fs.type === 'remote') {
-        fs.socket.emit(EVENTS.ACTION, action, fs.path(req.url), ...args)
+      debug('Action "%s" on %s path "%s"', action, fs.type, req.url)
+      if (fs.emitter) {
+        fs.action(action, req.url, ...args)
         return res.send('OK')
-      }
-      if (fs.emitter && fs.emitter.hasListeners(EVENTS.ACTION)) {
-        fs.emitter.emit(EVENTS.ACTION, action, fs.path(req.url), ...args)
-        return res.send('OK')
+      } else {
+        debug('Warning! action emitter not set, skipping')
       }
     }
     return next()
@@ -134,20 +133,20 @@ function httpAction(getFS, actions) {
       if (isup(req.url)) {
         return next()
       }
-      const current = getFS()
-      if (!current || !current.isConnected()) {
+      const fs = getFS()
+      if (!fs || !fs.isConnected()) {
         return next();
       }
       if (req.method !== 'POST') {
         return next()
       }
-      const exists = await current.exists(req.url)
+      const exists = await fs.exists(req.url)
       if (!exists) {
         return next()
       }
-      onJSON(req, res, next, current)
+      onJSON(req, res, next, fs)
     } catch (e) {
-      console.log(time(), 'error', e)
+      debug('error', e)
       return next()
     }
   }

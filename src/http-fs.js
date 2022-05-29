@@ -1,7 +1,7 @@
+const debug = require('debug')('socket.io-static:fs')
 const { normalize, join, basename } = require('path')
 const busboy = require('busboy')
 const got = require('got')
-const { time } = require('./util/time')
 const FSLocal = require('./fs.local')
 const FSRemote = require('./fs.remote')
 const { isup } = require('./util/path')
@@ -59,8 +59,12 @@ function httpFS(getFS) {
       const url = new URL(file.url)
       const filename = file.name || (url.pathname && url.pathname !== '/') ? basename(file.name || url.pathname) : undefined
       if (filename) {
-        const stream = fs.createWriteStream(join(req.url, filename))
+        const filepath = join(req.url, filename)
+        const stream = fs.createWriteStream(filepath)
+        debug('uploading file "%s" to remote path "%s" from url "%s"', filename, filepath, url.href)
         return got.stream(file.url).pipe(stream)
+      } else {
+        debug('warning! filename for url "%s" not set', url.href)
       }
     }
   }
@@ -72,7 +76,9 @@ function httpFS(getFS) {
    */
   const createDirectory = async (req, fs, dir) => {
     if (dir.name && !isup(dir.name)) {
-      await fs.mkdir(join(req.url, normalize(dir.name)), { recursive: true })
+      const dirpath = join(req.url, normalize(dir.name))
+      debug('creating remote directory "%s"', dirpath)
+      await fs.mkdir(dirpath, { recursive: true })
     }
   }
   /**
@@ -96,10 +102,12 @@ function httpFS(getFS) {
         if (!filename) {
           return file.pipe(devNull, { end: false })
         }
-        const stream = fs.createWriteStream(join(req.url, filename))
+        const filepath = join(req.url, filename)
+        const stream = fs.createWriteStream(filepath)
         file.pipe(stream)
+        debug('uploading file "%s" to remote path "%s"', filename, filepath)
       } catch (e) {
-        console.log(time(), 'error', e)
+        debug('error', e)
       }
     })
     /** @type {{ url: string; name: string; }} */
@@ -120,7 +128,7 @@ function httpFS(getFS) {
       }
     })
     bb.on('error', (e) => {
-      console.log(time(), 'error', e)
+      debug('error', e)
       res.status(400).send('FAIL')
     })
     bb.on('close', async () => {
@@ -129,7 +137,7 @@ function httpFS(getFS) {
         await createDirectory(req, fs, dir)
         res.send('OK')
       } catch (e) {
-        console.log(time(), 'error', e)
+        debug('error', e)
         res.status(400).send('FAIL: ' + e.message)
       }
     })
@@ -163,26 +171,27 @@ function httpFS(getFS) {
       if (isup(req.url)) {
         return next()
       }
-      const current = getFS()
-      if (!current || !current.isConnected()) {
+      const fs = getFS()
+      if (!fs || !fs.isConnected()) {
         return next();
       }
 
       const contentType = req.headers['content-type'] || ''
       switch (req.method) {
         case 'DELETE':
-          if (!await current.exists(req.url)) {
+          if (!await fs.exists(req.url)) {
             return next()
           }
-          await current.del(req.url)
+          debug('deleting file "%s"', req.url)
+          await fs.del(req.url)
           return res.send('OK');
         case 'POST':
           if (/multipart\/form\-data/i.test(contentType)) {
-            await onFormData(req, res, current)
+            await onFormData(req, res, fs)
             return;
           }
           if (/application\/(?:json|x\-www\-form\-urlencoded)/i.test(contentType)) {
-            await onJSON(req, res, next, current)
+            await onJSON(req, res, next, fs)
             return;
           }
           return next()
@@ -190,7 +199,7 @@ function httpFS(getFS) {
           return next()
       }
     } catch (e) {
-      console.log(time(), 'error', e)
+      debug('error', e)
       return next()
     }
   }

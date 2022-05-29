@@ -42,6 +42,10 @@ class FSRemote {
     this.timeout = timeout
   }
 
+  get emitter() {
+    return this.socket
+  }
+
   isConnected() {
     return !!this.socket && this.socket.connected
   }
@@ -120,11 +124,17 @@ class FSRemote {
   }
 
   /**
-   * @param {string} event
-   * @param {...any} args
+   * @param {string} action
+   * @param {string} path
+   * @param {any[]} args
+   * @returns {boolean} whether or not action sent
    */
-  async emit(event, ...args) {
-    return this.socket.emit(event, args)
+  action(action, path, ...args) {
+    if (this.emitter) {
+      path = this.path(path)
+      this.emitter.emit(EVENTS.ACTION, action, path, ...args)
+    }
+    return !!this.emitter
   }
 
   /**

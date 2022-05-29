@@ -1,3 +1,4 @@
+const debug = require('debug')('socket.io-static')
 const ss = require('socket.io-stream')
 const EVENTS = require('./util/events')
 const FSLocal = require('./fs.local')
@@ -29,6 +30,7 @@ function ioStatic(root, options = {}) {
    */
   async function onReadFile(stream, from) {
     try {
+      debug('reading file from "%s"', from.path)
       const exists = await localFs.exists(from.path)
       if (!exists) {
         throw new Error(`file not found: ${from.path}`)
@@ -40,6 +42,7 @@ function ioStatic(root, options = {}) {
       const source = localFs.createReadStream(from.path, from.opts);
       source.pipe(stream)
     } catch (e) {
+      debug('read file error', e)
       stream.end('')
     }
   }
@@ -51,9 +54,11 @@ function ioStatic(root, options = {}) {
    */
   function onWriteFile(stream, to) {
     try {
+      debug('writing file to "%s"', to.path)
       const dest = localFs.createWriteStream(to.path, to.opts)
       stream.pipe(dest)
     } catch (e) {
+      debug('write file error', e)
       stream.destroy(e)
     }
   }
@@ -61,17 +66,19 @@ function ioStatic(root, options = {}) {
   /**
    * @template T
    * @param {Extract<T, (...args: any) => any>} fn 
+   * @param {any} [thisArg]
    */
-  const createListener = (fn) => {
+  const createListener = (fn, thisArg) => {
     /** @type {(args: Parameters<T>, callback: (res: any) => void) => Promise<void>} */
     const listener = async (args, callback) => {
       try {
-        const res = await fn(...args)
+        debug('%s("%s")...', fn.name, args[0])
+        const res = await fn.apply(thisArg, args)
         if (typeof callback === 'function') {
           callback({ ok: true, data: transformFunctionValuesToReturnValues(res) })
         }
       } catch (e) {
-        console.log(fn.name, 'error', e)
+        debug('%s error', fn.name, e)
         if (typeof callback === 'function') {
           callback({ ok: false, error: e.message })
         }
@@ -80,12 +87,12 @@ function ioStatic(root, options = {}) {
     return listener;
   }
 
-  const onStat = createListener(localFs.stat)
-  const onReaddir = createListener(localFs.readdir)
-  const onExists = createListener(localFs.exists)
-  const onDel = createListener(localFs.del)
-  const onStruct = createListener(localFs.struct)
-  const onMkdir = createListener(localFs.mkdir)
+  const onStat = createListener(localFs.stat, localFs)
+  const onReaddir = createListener(localFs.readdir, localFs)
+  const onExists = createListener(localFs.exists, localFs)
+  const onDel = createListener(localFs.del, localFs)
+  const onStruct = createListener(localFs.struct, localFs)
+  const onMkdir = createListener(localFs.mkdir, localFs)
 
   /**
    * @param {import('socket.io').Socket} socket 
@@ -108,6 +115,9 @@ function ioStatic(root, options = {}) {
     if (opts.delete) {
       socket.on(EVENTS.DEL, onDel)
     }
+    socket.on(EVENTS.ACTION, (action, path, ...args) => {
+      debug('remote-action %s on path %s, args %o', action, path, args)
+    })
 
     socket._iostaticListeners = true;
     return socket;
