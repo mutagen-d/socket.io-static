@@ -1,5 +1,5 @@
 const debug = require('debug')('socket.io-static:static')
-const { normalize, join } = require('path')
+const { normalize, join, basename } = require('path')
 const parseRange = require('range-parser')
 const mime = require('mime')
 const { isup } = require('./util/path');
@@ -42,6 +42,9 @@ function httpStatic(root, getSocket, options) {
       : opts.index === false
         ? []
         : ['index.html']
+  for (let i = 0; i < index.length; ++i) {
+    index[i] = basename(index[i])
+  }
   /**
    * @param {import('express').Request} req
    * @param {import('express').Response} res
