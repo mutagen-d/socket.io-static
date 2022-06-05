@@ -1,7 +1,7 @@
 const fs = require('fs')
 const { join, normalize } = require('path')
 const del = require('del')
-const { isup } = require('./util/path')
+const { isup } = require('./util/isup')
 const EVENTS = require('./util/events')
 
 /**
@@ -20,6 +20,8 @@ const EVENTS = require('./util/events')
  * @template T
  * @typedef {T extends ('buffer' | { encoding: 'buffer' })
  * ? Buffer[]
+ * : T extends any
+ * ? string[]
  * : T extends { withFileTypes: true }
  * ? import('fs').Dirent[]
  * : T extends (BufferEncoding | { encoding: BufferEncoding } | undefined | null | { withFileTypes: (false | undefined) })
@@ -86,7 +88,7 @@ class FSLocal {
   /**
    * @template P
    * @param {string} path
-   * @param {Extract<P, ReaddirOptions>} opts
+   * @param {Extract<P, ReaddirOptions> | ReaddirOptions} [opts]
    * @returns {Promise<ReaddirResult<P>>}
    */
   async readdir(path, opts) {

@@ -2,7 +2,7 @@ const { normalize, join } = require('path')
 const ss = require('socket.io-stream')
 const Deffer = require('./util/deffer')
 const EVENTS = require('./util/events')
-const { isup } = require('./util/path')
+const { isup } = require('./util/isup')
 
 /**
  * @template T

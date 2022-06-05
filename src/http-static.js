@@ -2,7 +2,7 @@ const debug = require('debug')('socket.io-static:static')
 const { normalize, join, basename } = require('path')
 const parseRange = require('range-parser')
 const mime = require('mime')
-const { isup } = require('./util/path');
+const { isup } = require('./util/isup');
 const FSRemote = require('./fs.remote');
 const { parseUrl } = require('./util/parseurl');
 

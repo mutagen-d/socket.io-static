@@ -4,7 +4,7 @@
   "description": "Serve remote files",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "keywords": [
     "socket.io",
@@ -31,5 +31,9 @@
   "peerDependencies": {
     "socket.io": "^4.4",
     "socket.io-client": "^4"
+  },
+  "devDependencies": {
+    "@jest/globals": "^28.1.0",
+    "jest": "^28.1.0"
   }
 }
